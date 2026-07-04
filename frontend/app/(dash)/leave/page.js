@@ -1,24 +1,28 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { DayPicker } from 'react-day-picker';
 import { Loader2, Send, CalendarDays } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
 import { api } from '@/lib/api';
 import { LeaveStatusBadge } from '@/components/leave/LeaveStatusBadge';
+import { AttendanceCalendar } from '@/components/attendance/AttendanceCalendar';
 import { ErrorState, EmptyState, SkeletonBlock } from '@/components/shared/states';
-import { formatDate } from '@/lib/format';
+import { formatDate, toDateInputValue } from '@/lib/format';
 
 const LEAVE_TYPES = ['PAID', 'SICK', 'UNPAID'];
-const EMPTY_FORM = { type: 'PAID', startDate: '', endDate: '', remarks: '' };
 
 export default function LeavePage() {
   const { user } = useAuth();
 
   const [leaves, setLeaves] = useState([]);
+  const [attendance, setAttendance] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  const [form, setForm] = useState(EMPTY_FORM);
+  const [type, setType] = useState('PAID');
+  const [range, setRange] = useState(undefined);
+  const [remarks, setRemarks] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState('');
   const [success, setSuccess] = useState('');
@@ -28,10 +32,14 @@ export default function LeavePage() {
     setLoading(true);
     setError('');
     try {
-      const data = await api.get('/api/leaves/me');
-      setLeaves(data || []);
+      const [mine, bundle] = await Promise.all([
+        api.get('/api/leaves/me'),
+        api.get(`/api/attendance/${user.id}`, { scope: 'all' }),
+      ]);
+      setLeaves(mine || []);
+      setAttendance(bundle?.monthly?.records || []);
     } catch (err) {
-      setError(err.message || 'Unable to load your leaves.');
+      setError(err.message || 'Unable to load your leave data.');
     } finally {
       setLoading(false);
     }
@@ -41,20 +49,25 @@ export default function LeavePage() {
     load();
   }, [load]);
 
-  const change = (key, value) => setForm((prev) => ({ ...prev, [key]: value }));
-
   const submit = async (e) => {
     e.preventDefault();
     setFormError('');
     setSuccess('');
-    if (!form.startDate || !form.endDate) {
-      setFormError('Please select both a start and end date.');
+    if (!range?.from || !range?.to) {
+      setFormError('Select a start and end date on the calendar.');
       return;
     }
     setSubmitting(true);
     try {
-      await api.post('/api/leaves', form);
-      setForm(EMPTY_FORM);
+      await api.post('/api/leaves', {
+        type,
+        startDate: toDateInputValue(range.from),
+        endDate: toDateInputValue(range.to),
+        remarks,
+      });
+      setType('PAID');
+      setRange(undefined);
+      setRemarks('');
       setSuccess('Leave request submitted.');
       await load();
     } catch (err) {
@@ -70,11 +83,11 @@ export default function LeavePage() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
       <div>
         <h1 className="text-2xl font-bold text-slate-900">Leave / Time Off</h1>
-        <p className="text-slate-500">Apply for leave and track your requests.</p>
+        <p className="text-slate-500">Pick your dates on the calendar and track your requests.</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Apply form */}
+        {/* Apply form with calendar range picker */}
         <div className="lg:col-span-1">
           <form onSubmit={submit} className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm space-y-4">
             <h3 className="text-lg font-bold text-slate-900">Apply for Leave</h3>
@@ -82,8 +95,8 @@ export default function LeavePage() {
             <div>
               <label className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Type</label>
               <select
-                value={form.type}
-                onChange={(e) => change('type', e.target.value)}
+                value={type}
+                onChange={(e) => setType(e.target.value)}
                 className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 bg-white"
               >
                 {LEAVE_TYPES.map((t) => (
@@ -93,42 +106,34 @@ export default function LeavePage() {
             </div>
 
             <div>
-              <label className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Start Date</label>
-              <input
-                type="date"
-                value={form.startDate}
-                onChange={(e) => change('startDate', e.target.value)}
-                className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 bg-white"
-              />
-            </div>
-
-            <div>
-              <label className="text-xs font-semibold text-slate-400 uppercase tracking-wide">End Date</label>
-              <input
-                type="date"
-                value={form.endDate}
-                onChange={(e) => change('endDate', e.target.value)}
-                className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 bg-white"
-              />
+              <label className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Select Dates</label>
+              <div className="mt-1 rounded-xl border border-slate-200 p-2 flex justify-center">
+                <DayPicker
+                  mode="range"
+                  selected={range}
+                  onSelect={setRange}
+                  className="rdp-blue"
+                  styles={{ day: { margin: '1px' } }}
+                />
+              </div>
+              <p className="text-xs text-slate-500 mt-2">
+                {range?.from ? formatDate(range.from) : 'Start'} → {range?.to ? formatDate(range.to) : 'End'}
+              </p>
             </div>
 
             <div>
               <label className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Remarks</label>
               <textarea
-                value={form.remarks}
-                onChange={(e) => change('remarks', e.target.value)}
+                value={remarks}
+                onChange={(e) => setRemarks(e.target.value)}
                 rows={3}
                 placeholder="Reason for leave (optional)"
                 className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 bg-white resize-none"
               />
             </div>
 
-            {formError && (
-              <div className="bg-red-50 text-red-700 border border-red-100 rounded-xl px-3 py-2 text-sm">{formError}</div>
-            )}
-            {success && (
-              <div className="bg-emerald-50 text-emerald-700 border border-emerald-100 rounded-xl px-3 py-2 text-sm">{success}</div>
-            )}
+            {formError && <div className="bg-red-50 text-red-700 border border-red-100 rounded-xl px-3 py-2 text-sm">{formError}</div>}
+            {success && <div className="bg-emerald-50 text-emerald-700 border border-emerald-100 rounded-xl px-3 py-2 text-sm">{success}</div>}
 
             <button
               type="submit"
@@ -141,48 +146,52 @@ export default function LeavePage() {
           </form>
         </div>
 
-        {/* History */}
-        <div className="lg:col-span-2">
-          <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">
-            <h3 className="text-lg font-bold text-slate-900 mb-4">My Leave Requests</h3>
+        {/* Right column: month attendance calendar + history */}
+        <div className="lg:col-span-2 space-y-8">
+          {error ? (
+            <ErrorState message={error} onRetry={load} />
+          ) : loading ? (
+            <>
+              <SkeletonBlock className="h-80 rounded-2xl" />
+              <SkeletonBlock className="h-64 rounded-2xl" />
+            </>
+          ) : (
+            <>
+              <AttendanceCalendar month={new Date().getMonth()} records={attendance} />
 
-            {error ? (
-              <ErrorState message={error} onRetry={load} />
-            ) : loading ? (
-              <div className="space-y-3">
-                {Array.from({ length: 4 }).map((_, i) => (
-                  <SkeletonBlock key={i} className="h-14" />
-                ))}
+              <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">
+                <h3 className="text-lg font-bold text-slate-900 mb-4">My Leave Requests</h3>
+                {leaves.length === 0 ? (
+                  <EmptyState message="You have not requested any leave yet." icon={CalendarDays} />
+                ) : (
+                  <div className="overflow-x-auto rounded-xl border border-slate-200">
+                    <table className="w-full text-sm text-left whitespace-nowrap">
+                      <thead className="bg-slate-50 text-slate-600 font-medium border-b border-slate-200">
+                        <tr>
+                          <th className="px-6 py-3">Type</th>
+                          <th className="px-6 py-3">From</th>
+                          <th className="px-6 py-3">To</th>
+                          <th className="px-6 py-3">Status</th>
+                          <th className="px-6 py-3">Comment</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 bg-white">
+                        {leaves.map((l) => (
+                          <tr key={l.id}>
+                            <td className="px-6 py-3 font-medium text-slate-900">{l.type}</td>
+                            <td className="px-6 py-3 text-slate-600">{formatDate(l.startDate)}</td>
+                            <td className="px-6 py-3 text-slate-600">{formatDate(l.endDate)}</td>
+                            <td className="px-6 py-3"><LeaveStatusBadge status={l.status} /></td>
+                            <td className="px-6 py-3 text-slate-500 max-w-xs truncate">{l.adminComment || l.remarks || '—'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
-            ) : leaves.length === 0 ? (
-              <EmptyState message="You have not requested any leave yet." icon={CalendarDays} />
-            ) : (
-              <div className="overflow-x-auto rounded-xl border border-slate-200">
-                <table className="w-full text-sm text-left whitespace-nowrap">
-                  <thead className="bg-slate-50 text-slate-600 font-medium border-b border-slate-200">
-                    <tr>
-                      <th className="px-6 py-3">Type</th>
-                      <th className="px-6 py-3">From</th>
-                      <th className="px-6 py-3">To</th>
-                      <th className="px-6 py-3">Status</th>
-                      <th className="px-6 py-3">Remarks</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 bg-white">
-                    {leaves.map((l) => (
-                      <tr key={l.id}>
-                        <td className="px-6 py-3 font-medium text-slate-900">{l.type}</td>
-                        <td className="px-6 py-3 text-slate-600">{formatDate(l.startDate)}</td>
-                        <td className="px-6 py-3 text-slate-600">{formatDate(l.endDate)}</td>
-                        <td className="px-6 py-3"><LeaveStatusBadge status={l.status} /></td>
-                        <td className="px-6 py-3 text-slate-500 max-w-xs truncate">{l.remarks || '—'}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
+            </>
+          )}
         </div>
       </div>
     </div>

@@ -45,6 +45,28 @@ export function formatNumber(value) {
   return new Intl.NumberFormat('en-IN').format(num);
 }
 
+// A standard workday for computing overtime ("extra hours").
+export const STANDARD_DAY_MINUTES = 8 * 60;
+
+export function workedMinutes(checkIn, checkOut) {
+  if (!checkIn || !checkOut) return 0;
+  const start = new Date(checkIn).getTime();
+  const end = new Date(checkOut).getTime();
+  if (Number.isNaN(start) || Number.isNaN(end)) return 0;
+  return Math.max(0, Math.floor((end - start) / 60000));
+}
+
+export function formatHm(minutes) {
+  if (!minutes || minutes <= 0) return '0h 0m';
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return `${h}h ${m}m`;
+}
+
+export function extraMinutes(checkIn, checkOut) {
+  return Math.max(0, workedMinutes(checkIn, checkOut) - STANDARD_DAY_MINUTES);
+}
+
 export function initials(name) {
   if (!name) return '?';
   const parts = String(name).trim().split(/\s+/);

@@ -50,6 +50,7 @@ app.put('/api/users/:id/private-info', requireAuth, userController.updatePrivate
 
 // Salary Routes (ADMIN + HR only)
 app.get('/api/salary-structure/:userId', requireAuth, requireRole('ADMIN', 'HR'), salaryController.getSalaryStructure);
+app.put('/api/salary-structure/:userId', requireAuth, requireRole('ADMIN', 'HR'), salaryController.updateSalaryStructure);
 
 // Leave Routes
 app.get('/api/leaves/me', requireAuth, leaveController.getMyLeaves);

@@ -5,7 +5,7 @@ import { CalendarCheck } from 'lucide-react';
 import { api } from '../../lib/api';
 import { AttendanceBadge } from '../attendance/AttendanceBadge';
 import { ErrorState, EmptyState, SkeletonBlock } from '../shared/states';
-import { formatTime } from '../../lib/format';
+import { formatTime, formatHm, workedMinutes, extraMinutes } from '../../lib/format';
 
 function todayInput() {
   const d = new Date();
@@ -65,6 +65,8 @@ export function AttendanceRecords() {
                 <th className="px-6 py-3">Status</th>
                 <th className="px-6 py-3">Check In</th>
                 <th className="px-6 py-3">Check Out</th>
+                <th className="px-6 py-3 text-right">Work Hours</th>
+                <th className="px-6 py-3 text-right">Extra Hours</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 bg-white">
@@ -77,6 +79,8 @@ export function AttendanceRecords() {
                   <td className="px-6 py-3"><AttendanceBadge status={r.status} /></td>
                   <td className="px-6 py-3 text-slate-600">{r.checkIn ? formatTime(r.checkIn) : '—'}</td>
                   <td className="px-6 py-3 text-slate-600">{r.checkOut ? formatTime(r.checkOut) : '—'}</td>
+                  <td className="px-6 py-3 text-right text-slate-700">{formatHm(workedMinutes(r.checkIn, r.checkOut))}</td>
+                  <td className="px-6 py-3 text-right text-slate-700">{formatHm(extraMinutes(r.checkIn, r.checkOut))}</td>
                 </tr>
               ))}
             </tbody>
