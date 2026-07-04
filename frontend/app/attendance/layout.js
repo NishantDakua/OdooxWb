@@ -4,7 +4,7 @@ import React from 'react';
 import { useAuth } from '../../lib/AuthContext';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { Calendar, LayoutDashboard, LogOut, ShieldAlert, User, Loader2, UserPlus } from 'lucide-react';
+import { Calendar, LayoutDashboard, LogOut, ShieldAlert, User, Loader2, UserPlus, Wallet, CalendarDays } from 'lucide-react';
 
 export default function AttendanceLayout({ children }) {
   const { user, logout, loading } = useAuth();
@@ -40,9 +40,13 @@ export default function AttendanceLayout({ children }) {
 
   const navItems = [
     { href: '/attendance', label: 'My Dashboard', icon: LayoutDashboard },
+    { href: '/attendance/leave', label: 'Leaves', icon: CalendarDays },
+    { href: '/attendance/payroll', label: 'Payroll', icon: Wallet },
     ...(user.role === 'ADMIN' || user.role === 'HR' ? [
-      { href: '/admin/attendance', label: 'Admin Panel', icon: ShieldAlert },
-      { href: '/admin/employees/create', label: 'Onboard Employee', icon: UserPlus }
+      { href: '/admin/attendance', label: 'Attendance Panel', icon: ShieldAlert },
+      { href: '/admin/employees/create', label: 'Onboard Employee', icon: UserPlus },
+      { href: '/admin/leave', label: 'Leave Approvals', icon: CalendarDays },
+      { href: '/admin/payroll', label: 'Payroll Structure', icon: Wallet }
     ] : []),
   ];
 
