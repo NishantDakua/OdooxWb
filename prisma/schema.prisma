@@ -1,0 +1,72 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum Role {
+  EMPLOYEE
+  HR
+}
+
+enum LeaveType {
+  PAID
+  SICK
+  UNPAID
+}
+
+enum LeaveStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model User {
+  id          String   @id @default(cuid())
+  name        String
+  email       String   @unique
+  role        Role     @default(EMPLOYEE)
+  designation String?
+  department  String?
+  createdAt   DateTime @default(now())
+
+  leaves  Leave[]
+  payroll Payroll?
+
+  @@map("users")
+}
+
+model Leave {
+  id        String      @id @default(cuid())
+  userId    String
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      LeaveType
+  startDate DateTime
+  endDate   DateTime
+  days      Int
+  remarks   String?
+  status    LeaveStatus @default(PENDING)
+  hrComment String?
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@map("leaves")
+}
+
+model Payroll {
+  id         String   @id @default(cuid())
+  userId     String   @unique
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  basic      Float
+  allowances Float
+  deductions Float
+  updatedAt  DateTime @updatedAt
+
+  @@map("payroll")
+}
