@@ -20,7 +20,7 @@ export default function UnauthorizedPage() {
         </p>
 
         <Link
-          href={user ? (user.role === 'ADMIN' ? '/admin/attendance' : '/attendance') : '/login'}
+          href={user ? '/dashboard' : '/login'}
           className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm shadow-blue-50"
         >
           <ArrowLeft className="w-4 h-4" />

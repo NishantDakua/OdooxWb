@@ -20,7 +20,7 @@ export default function ChangePasswordPage() {
       if (!user) {
         router.replace('/login');
       } else if (!user.isFirstLogin) {
-        router.replace(user.role === 'ADMIN' || user.role === 'HR' ? '/admin/attendance' : '/attendance');
+        router.replace('/dashboard');
       }
     }
   }, [user, authLoading, router]);
@@ -68,7 +68,7 @@ export default function ChangePasswordPage() {
         // Update user state so route guards let them through
         updateUser({ ...user, isFirstLogin: false });
         setTimeout(() => {
-          router.push(user.role === 'ADMIN' || user.role === 'HR' ? '/admin/attendance' : '/attendance');
+          router.push('/dashboard');
         }, 1500);
       } else {
         setError(data.message || 'Failed to update password.');

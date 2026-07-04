@@ -82,7 +82,7 @@ export function GuestRoute({ children }) {
 
   useEffect(() => {
     if (!loading && user) {
-      router.replace(user.role === 'ADMIN' ? '/admin/attendance' : '/attendance');
+      router.replace('/dashboard');
     }
   }, [user, loading, router]);
 

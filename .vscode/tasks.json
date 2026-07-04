@@ -1,0 +1,18 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "backend start",
+			"type": "shell",
+			"command": "pnpm",
+			"args": [
+				"--dir",
+				"/mnt/linux-data/Hackathons/OdooXADAMAS/backend",
+				"start"
+			],
+			"isBackground": true,
+			"problemMatcher": [],
+			"group": "build"
+		}
+	]
+}

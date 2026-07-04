@@ -4,7 +4,11 @@ require('dotenv').config();
 
 const attendanceController = require('./controllers/attendanceController');
 const authController = require('./controllers/authController');
+const userController = require('./controllers/userController');
+const salaryController = require('./controllers/salaryController');
+const leaveController = require('./controllers/leaveController');
 const { requireAuth, requireAdmin, requireAdminOrHR } = require('./middlewares/authMiddleware');
+const { requireRole } = require('./middlewares/requireRole');
 const errorMiddleware = require('./middlewares/errorMiddleware');
 
 const app = express();
@@ -36,8 +40,22 @@ app.post('/api/attendance/check-in', requireAuth, attendanceController.checkIn);
 app.post('/api/attendance/checkout', requireAuth, attendanceController.checkOut);
 app.get('/api/attendance/history', requireAuth, attendanceController.getHistory);
 
-// Admin Routes
-app.get('/api/admin/attendance', requireAuth, requireAdmin, attendanceController.getAdminAttendance);
+// Admin Routes — attendance records across all employees (ADMIN + HR)
+app.get('/api/admin/attendance', requireAuth, requireRole('ADMIN', 'HR'), attendanceController.getAdminAttendance);
+
+// User / Profile Routes
+app.get('/api/users', requireAuth, requireRole('ADMIN', 'HR'), userController.listUsers);
+app.get('/api/users/:id', requireAuth, userController.getUserById);
+app.put('/api/users/:id/private-info', requireAuth, userController.updatePrivateInfo);
+
+// Salary Routes (ADMIN + HR only)
+app.get('/api/salary-structure/:userId', requireAuth, requireRole('ADMIN', 'HR'), salaryController.getSalaryStructure);
+
+// Leave Routes
+app.get('/api/leaves/me', requireAuth, leaveController.getMyLeaves);
+app.get('/api/leaves', requireAuth, requireRole('ADMIN', 'HR'), leaveController.getAllLeaves);
+app.post('/api/leaves', requireAuth, leaveController.createLeave);
+app.patch('/api/leaves/:id/status', requireAuth, requireRole('ADMIN', 'HR'), leaveController.updateLeaveStatus);
 
 app.use(errorMiddleware);
 

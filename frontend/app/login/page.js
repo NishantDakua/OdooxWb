@@ -22,7 +22,7 @@ export default function LoginPage() {
       if (user.isFirstLogin) {
         router.replace('/change-password');
       } else {
-        router.replace(user.role === 'ADMIN' || user.role === 'HR' ? '/admin/attendance' : '/attendance');
+        router.replace('/dashboard');
       }
     }
   }, [user, router]);
@@ -63,7 +63,7 @@ export default function LoginPage() {
         if (data.mustChangePassword) {
           router.push('/change-password');
         } else {
-          router.push(data.user.role === 'ADMIN' || data.user.role === 'HR' ? '/admin/attendance' : '/attendance');
+          router.push('/dashboard');
         }
       } else {
         setError(data.message || 'Login failed.');
