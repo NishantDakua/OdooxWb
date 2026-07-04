@@ -21,6 +21,8 @@ export function AttendanceWorkspace({ title = "My Dashboard", description = "Tra
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [error, setError] = useState('');
+  const [selectedDay, setSelectedDay] = useState(null);
+  const [selectedRecord, setSelectedRecord] = useState(null);
 
   useEffect(() => {
     if (!authLoading) {
@@ -101,7 +103,7 @@ export function AttendanceWorkspace({ title = "My Dashboard", description = "Tra
   if (!user) return null;
 
   return (
-    <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 bg-slate-50 min-h-screen">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <AttendanceHeader title={`Welcome back, ${user.name}`} description={description} />
 
       {error && (
@@ -128,17 +130,65 @@ export function AttendanceWorkspace({ title = "My Dashboard", description = "Tra
           </div>
         </div>
 
-        <AttendanceCalendar
-          month={new Date().getMonth()}
-          records={data?.monthly?.records || []}
-          onDateSelect={() => {}}
-        />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-2">
+            <AttendanceCalendar
+              month={new Date().getMonth()}
+              records={data?.monthly?.records || []}
+              onDateSelect={(day, record) => {
+                setSelectedDay(day);
+                setSelectedRecord(record);
+              }}
+            />
+          </div>
+          <div className="lg:col-span-1">
+            <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm h-full flex flex-col justify-between">
+              <div>
+                <h3 className="text-lg font-bold text-slate-900 mb-4">Date Details</h3>
+                {selectedDay ? (
+                  <div className="space-y-4">
+                    <div>
+                      <p className="text-xs font-semibold text-slate-400 uppercase">Selected Date</p>
+                      <p className="text-slate-800 font-medium">{selectedDay.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                    </div>
+                    {selectedRecord ? (
+                      <div className="space-y-3 pt-2">
+                        <div>
+                          <p className="text-xs font-semibold text-slate-400 uppercase">Status</p>
+                          <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold mt-1 ${
+                            selectedRecord.status === 'PRESENT' ? 'bg-emerald-100 text-emerald-700' :
+                            selectedRecord.status === 'ABSENT' ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-700'
+                          }`}>
+                            {selectedRecord.status}
+                          </span>
+                        </div>
+                        <div>
+                          <p className="text-xs font-semibold text-slate-400 uppercase">Time</p>
+                          <p className="text-slate-700 text-sm mt-1">
+                            In: {selectedRecord.checkIn ? new Date(selectedRecord.checkIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-'}
+                          </p>
+                          <p className="text-slate-700 text-sm">
+                            Out: {selectedRecord.checkOut ? new Date(selectedRecord.checkOut).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-'}
+                          </p>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-sm text-slate-500 pt-2">No attendance logged for this day.</p>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-sm text-slate-400">Click any day on the calendar to inspect attendance details.</p>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
 
         <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">
           <h3 className="text-xl font-bold text-slate-900 mb-6">Recent History</h3>
           <AttendanceTable records={data?.history || []} />
         </div>
       </div>
-    </main>
+    </div>
   );
 }
