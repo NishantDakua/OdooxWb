@@ -1,0 +1,23 @@
+{
+  "name": "odoo-hrms",
+  "version": "1.0.0",
+  "description": "HRMS - Human Resource Management System",
+  "private": true,
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
+  "scripts": {
+    "dev": "pnpm -r dev",
+    "build": "pnpm -r build",
+    "start": "pnpm -r dev",
+    "test": "pnpm -r test"
+  },
+  "keywords": [
+    "hrms",
+    "human-resources",
+    "management"
+  ],
+  "author": "",
+  "license": "ISC"
+}

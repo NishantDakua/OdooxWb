@@ -4,9 +4,13 @@ generator client {
 
 datasource db {
   provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+  url       = env("DATABASE_URL")      // Neon pooled connection string
+  directUrl = env("DIRECT_URL")        // Neon direct connection, needed for migrations
 }
+
+// ─────────────────────────────────────────────
+// ENUMS
+// ─────────────────────────────────────────────
 
 enum Role {
   ADMIN
@@ -32,84 +36,143 @@ enum LeaveStatus {
   REJECTED
 }
 
+// ─────────────────────────────────────────────
+// USER
+// ─────────────────────────────────────────────
+
 model User {
-  id                      String      @id @default(cuid())
-  employeeId              String      @unique
-  name                    String?
-  email                   String?     @unique
-  passwordHash            String?
-  role                    Role        @default(EMPLOYEE)
-  department              String?
-  jobTitle                String?
-  phone                   String?
-  address                 String?
-  profilePicture          String?
-  isEmailVerified         Boolean     @default(false)
-  emailVerificationToken  String?     @unique
-  passwordResetToken      String?     @unique
-  passwordResetExpires    DateTime?
-  documents               Document[]
-  attendances             Attendance[]
-  leaves                  Leave[]     @relation("LeavesRequested")
-  reviewedLeaves          Leave[]     @relation("LeavesReviewed")
-  payrolls                Payroll[]
-  createdAt               DateTime    @default(now())
-  updatedAt               DateTime    @updatedAt
+  id                    String   @id @default(cuid())
+  employeeId            String   @unique
+  name                  String
+  email                 String   @unique
+  passwordHash          String
+  role                  Role     @default(EMPLOYEE)
+
+  department            String?
+  jobTitle              String?
+  manager               String?
+  location              String?
+  phone                 String?
+  address               String?
+  profilePicture        String?  // storage URL (S3/Cloudinary/etc.)
+
+  dateOfBirth           DateTime? @db.Date
+  nationality           String?
+  personalEmail         String?
+  gender                String?
+  maritalStatus         String?
+  dateOfJoining         DateTime? @db.Date
+
+  bankAccountNumber     String?
+  bankName              String?
+  ifscCode              String?
+  panNumber             String?
+  uanNumber             String?
+
+  isEmailVerified       Boolean  @default(false)
+  emailVerificationToken String? @unique
+  passwordResetToken    String?  @unique
+  passwordResetExpires  DateTime?
+
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  // Relations
+  documents             Document[]
+  attendances           Attendance[]
+  leaves                Leave[]           @relation("LeaveRequester")
+  reviewedLeaves        Leave[]           @relation("LeaveReviewer")
+  payrolls              Payroll[]
+
   @@index([role])
 }
+
+// ─────────────────────────────────────────────
+// DOCUMENTS (ID proofs, contracts, certificates, etc.)
+// ─────────────────────────────────────────────
 
 model Document {
   id         String   @id @default(cuid())
   userId     String
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   fileName   String
   fileUrl    String
-  fileType   String
+  fileType   String   // e.g. "pdf", "jpg"
+
   uploadedAt DateTime @default(now())
+
   @@index([userId])
 }
 
+// ─────────────────────────────────────────────
+// ATTENDANCE
+// ─────────────────────────────────────────────
+
 model Attendance {
-  id        String           @id @default(cuid())
+  id        String            @id @default(cuid())
   userId    String
-  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  date      DateTime         @db.Date
+  user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  date      DateTime          @db.Date
   status    AttendanceStatus
   checkIn   DateTime?
   checkOut  DateTime?
-  createdAt DateTime         @default(now())
-  updatedAt DateTime         @updatedAt
-  @@unique([userId, date])
+
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+
+  @@unique([userId, date])   // one record per user per day
   @@index([date])
 }
 
+// ─────────────────────────────────────────────
+// LEAVE / TIME-OFF
+// ─────────────────────────────────────────────
+
 model Leave {
-  id           String      @id @default(cuid())
-  userId       String
-  requester    User        @relation("LeavesRequested", fields: [userId], references: [id], onDelete: Cascade)
-  type         LeaveType
-  startDate    DateTime    @db.Date
-  endDate      DateTime    @db.Date
-  remarks      String?
-  status       LeaveStatus @default(PENDING)
-  adminComment String?
-  reviewedById String?
-  reviewer     User?       @relation("LeavesReviewed", fields: [reviewedById], references: [id], onDelete: Cascade)
-  reviewedAt   DateTime?
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
-  @@index([userId, status])
+  id            String      @id @default(cuid())
+
+  userId        String
+  user          User        @relation("LeaveRequester", fields: [userId], references: [id], onDelete: Cascade)
+
+  type          LeaveType
+  startDate     DateTime    @db.Date
+  endDate       DateTime    @db.Date
+  remarks       String?
+
+  status        LeaveStatus @default(PENDING)
+  adminComment  String?
+
+  reviewedById  String?
+  reviewedBy    User?       @relation("LeaveReviewer", fields: [reviewedById], references: [id])
+  reviewedAt    DateTime?
+
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@index([userId])
+  @@index([status])
 }
+
+// ─────────────────────────────────────────────
+// PAYROLL (historical — one row per effective change,
+// so updating salary doesn't destroy old records)
+// ─────────────────────────────────────────────
 
 model Payroll {
   id            String   @id @default(cuid())
+
   userId        String
   user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  baseSalary    Decimal  @db.Decimal(12,2)
-  allowances    Decimal  @default(0) @db.Decimal(12,2)
-  deductions    Decimal  @default(0) @db.Decimal(12,2)
-  netSalary     Decimal  @db.Decimal(12,2)
+
+  baseSalary    Decimal  @db.Decimal(12, 2)
+  allowances    Decimal  @db.Decimal(12, 2) @default(0)
+  deductions    Decimal  @db.Decimal(12, 2) @default(0)
+  netSalary     Decimal  @db.Decimal(12, 2)
+
   effectiveDate DateTime @db.Date
   createdAt     DateTime @default(now())
+
   @@index([userId, effectiveDate])
 }

@@ -1,3 +1,66 @@
-node_modules
-.next
+# ── Dependencies ──────────────────────────────
+node_modules/
+frontend/node_modules/
+backend/node_modules/
+.pnp
+.pnp.js
+
+# ── Environment variables ────────────────────
+.env
 .env.local
+.env.development.local
+.env.test.local
+.env.production.local
+frontend/.env*
+backend/.env*
+!**/.env.example
+
+# ── Next.js (frontend) ───────────────────────
+frontend/.next/
+frontend/out/
+frontend/build/
+.next/
+next-env.d.ts
+
+# ── Backend build output ─────────────────────
+backend/dist/
+backend/build/
+dist/
+
+# ── Prisma ────────────────────────────────────
+backend/prisma/migrations/dev.db
+*.db
+*.db-journal
+
+# ── Logs ──────────────────────────────────────
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ── Testing / coverage ────────────────────────
+coverage/
+.nyc_output/
+
+# ── TypeScript ────────────────────────────────
+*.tsbuildinfo
+
+# ── OS junk ───────────────────────────────────
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# ── Editor / IDE ──────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ── Vercel (if frontend deployed there) ───────
+.vercel
+
+# ── Misc ──────────────────────────────────────
+*.tgz
+.turbo/
