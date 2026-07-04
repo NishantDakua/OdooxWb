@@ -92,7 +92,7 @@ export function AdminAttendanceWorkspace() {
   if (!user || user.role !== 'ADMIN') return null;
 
   return (
-    <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 bg-slate-50 min-h-screen">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 mb-8">
         <AttendanceHeader title="Admin Dashboard" description="Overview of all employee attendance records." />
         <button 
@@ -165,6 +165,6 @@ export function AdminAttendanceWorkspace() {
           />
         )}
       </div>
-    </main>
+    </div>
   );
 }
