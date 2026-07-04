@@ -1,126 +1,216 @@
-# HRMS · Employee Leave & Payroll Module
+<div align="center">
 
-A hackathon-ready module built with Next.js 15 (App Router), TypeScript, Tailwind CSS,
-Prisma, and Neon Postgres.
+# 🧑‍💼 HRMS — Human Resource Management System
 
-## 1. Project Structure
+### _Every workday, perfectly aligned._
+
+A full-stack HR platform for **employee onboarding, profile management, attendance
+tracking, leave workflows, and salary structures** — with role-based access for
+Admins, HR officers, and Employees.
+
+![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=next.js)
+![React](https://img.shields.io/badge/React-19-149ECA?logo=react)
+![Express](https://img.shields.io/badge/Express-5-000000?logo=express)
+![Prisma](https://img.shields.io/badge/Prisma-6-2D3748?logo=prisma)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Neon-336791?logo=postgresql)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind-4-38BDF8?logo=tailwindcss)
+
+</div>
+
+---
+
+## ✨ Features
+
+| Area | Highlights |
+| --- | --- |
+| 🔐 **Auth** | JWT login, first-login password change, email/password reset, role-based guards |
+| 🧭 **Dashboard** | Per-role landing page, quick-access cards, merged recent activity feed |
+| 🕑 **Attendance** | Check-in / check-out, daily & weekly views, monthly calendar, work + extra hours |
+| 🌴 **Leave / Time-Off** | Calendar date-range apply, Paid / Sick / Unpaid, approval workflow with comments |
+| 👥 **Admin Panel** | Employee grid with live status dots, attendance records, leave approvals |
+| 👤 **Profile** | Private info (owner-editable), documents & resume tabs, view-only mode for others |
+| 💰 **Salary** | Salary structure + components (Admin/HR only), server-computed amounts |
+| 🆕 **Onboarding** | Auto-generated Employee IDs + one-time temporary passwords |
+
+---
+
+## 🏗️ Architecture
 
 ```
-hrms-leave-payroll/
-├─ prisma/
-│  ├─ schema.prisma          # User, Leave, Payroll models
-│  └─ seed.ts                 # Sample data
-├─ src/
-│  ├─ app/
-│  │  ├─ api/
-│  │  │  ├─ users/route.ts
-│  │  │  ├─ leaves/route.ts
-│  │  │  ├─ leaves/[id]/route.ts
-│  │  │  ├─ leaves/balance/route.ts
-│  │  │  ├─ payroll/route.ts
-│  │  │  └─ payroll/[userId]/route.ts
-│  │  ├─ employee/leave/page.tsx
-│  │  ├─ employee/payroll/page.tsx
-│  │  ├─ hr/leave/page.tsx
-│  │  ├─ hr/payroll/page.tsx
-│  │  ├─ layout.tsx / page.tsx / providers.tsx / globals.css
-│  ├─ components/
-│  │  ├─ ui/                  # button, input, textarea, select, dialog, table, badge, card, popover, date-range-picker, skeleton, label
-│  │  ├─ layout/navbar.tsx
-│  │  ├─ leave/                # apply form, history table, balance card, status badge
-│  │  ├─ hr/                   # leave table, action dialog, payroll table, edit salary dialog
-│  │  └─ payroll/salary-card.tsx
-│  ├─ context/user-context.tsx # simulated "logged in user" switcher
-│  ├─ lib/                     # prisma client, utils, zod schemas
-│  └─ types/index.ts
-├─ .env.example
-└─ package.json
+┌────────────────────────┐        HTTP / JWT        ┌────────────────────────┐         ┌───────────────┐
+│   Frontend (Next.js)    │  ───────────────────►    │   Backend (Express)     │  ────►  │  Neon Postgres │
+│   App Router · Tailwind │                          │   Prisma · JWT auth     │  Prisma │   (schema.prisma)
+│   :3000                 │  ◄───────────────────    │   :5000                 │  ◄────  │               │
+└────────────────────────┘        JSON { data }      └────────────────────────┘         └───────────────┘
 ```
 
-## 2. Important Assumption: Authentication
+- **Frontend** and **backend** are **two separate apps** and run independently.
+- The frontend talks to the backend through a single API client using `NEXT_PUBLIC_API_URL`.
+- Auth token is issued by the backend on login and stored client-side; every request carries it.
 
-The requirements didn't specify an auth flow, so this module ships with a **user
-switcher** in the navbar instead of a login screen. It reads all seeded users from
-`/api/users` and lets you switch between an HR account and employee accounts to
-demo both roles instantly. Swap `useCurrentUser()` in `src/context/user-context.tsx`
-for real session logic (NextAuth, Clerk, etc.) when you wire up authentication —
-every API route already expects a `userId`, so the rest of the app doesn't change.
+---
 
-## 3. Terminal Commands (Installation Order)
+## 🧰 Tech Stack
+
+**Frontend:** Next.js 16 (App Router), React 19, Tailwind CSS v4, lucide-react, react-day-picker
+**Backend:** Node.js, Express 5, Prisma ORM, JWT, bcryptjs, Zod
+**Database:** PostgreSQL (Neon)
+
+---
+
+## 📁 Project Structure
+
+```
+OdooXADAMAS/
+├─ backend/                       # Express API (port 5000)
+│  ├─ controllers/                # auth, attendance, user, salary, leave
+│  ├─ middlewares/                # requireAuth (JWT), requireRole, error handler
+│  ├─ services/ repositories/     # attendance business logic + data access
+│  ├─ prisma/schema.prisma        # single source of truth for the DB
+│  ├─ prisma/seed.js              # salary structures + profile enrichment
+│  └─ index.js                    # route wiring
+│
+└─ frontend/                      # Next.js app (port 3000)
+   ├─ app/
+   │  ├─ (dash)/                  # authenticated shell + pages
+   │  │  ├─ dashboard/            # My Dashboard  (all roles)
+   │  │  ├─ admin/                # Admin Panel   (ADMIN / HR)
+   │  │  ├─ onboard/              # Onboard Employee (ADMIN / HR)
+   │  │  ├─ attendance/           # My Attendance
+   │  │  ├─ leave/                # Leave / Time Off
+   │  │  └─ profile/              # My Profile
+   │  └─ login · change-password · reset-password · …
+   ├─ components/                 # layout shell, admin, profile, leave, attendance, shared
+   └─ lib/                        # api client, auth context, roles, formatting
+```
+
+---
+
+## 🗄️ Data Models (`backend/prisma/schema.prisma`)
+
+`User` · `Attendance` · `Leave` · `SalaryStructure` · `SalaryComponent` · `Document` · `Payroll`*
+
+> \*`Payroll` exists in the schema but is unused by the current views — **SalaryStructure / SalaryComponent** is the source of truth for salary data.
+
+---
+
+## 🚀 Getting Started
+
+### Prerequisites
+- Node.js 18+
+- A PostgreSQL database (a free [Neon](https://neon.tech) project works great)
+
+### 1 · Backend
 
 ```bash
-# 1. Create the project folder and copy in all files from this delivery,
-#    OR scaffold fresh and then overlay these files:
-npx create-next-app@latest hrms-leave-payroll --typescript --tailwind --app --src-dir --no-eslint
-cd hrms-leave-payroll
+cd backend
+npm install
 
-# 2. Install dependencies (if you started from scratch, otherwise `npm install` picks up package.json)
-npm install @prisma/client @hookform/resolvers @radix-ui/react-dialog @radix-ui/react-label \
-  @radix-ui/react-popover @radix-ui/react-select @radix-ui/react-slot @radix-ui/react-tabs \
-  class-variance-authority clsx date-fns lucide-react react-day-picker react-hook-form \
-  sonner tailwind-merge zod
-
-npm install -D prisma tsx autoprefixer
-
-# 3. Set up environment variables
-cp .env.example .env
-# then paste your Neon connection strings into .env
-
-# 4. Generate Prisma client & push schema to Neon
+# create backend/.env  (see below), then:
 npx prisma generate
-npx prisma db push
-
-# 5. Seed sample data
-npm run db:seed
-
-# 6. Run the app
-npm run dev
+npx prisma db push        # syncs schema.prisma to the database
+node prisma/seed.js       # seeds salary structures + profile data
+npm run dev               # starts the API on http://localhost:5000
 ```
 
-App runs at **http://localhost:3000** — it auto-redirects to the leave page for
-whichever user is selected in the navbar switcher.
+### 2 · Frontend
 
-## 4. Environment Variables (`.env`)
+```bash
+cd frontend
+npm install
 
+# create frontend/.env.local  (see below), then:
+npm run dev               # starts the app on http://localhost:3000
 ```
-DATABASE_URL="postgresql://<user>:<password>@<neon-host>/<db>?sslmode=require&pgbouncer=true"
-DIRECT_URL="postgresql://<user>:<password>@<neon-host>/<db>?sslmode=require"
+
+Open **http://localhost:3000** → you'll land on the login screen, then the dashboard.
+
+---
+
+## 🔑 Environment Variables
+
+**`backend/.env`**
+```env
+DATABASE_URL="postgresql://<user>:<password>@<host>/<db>?sslmode=require"
+DIRECT_URL="postgresql://<user>:<password>@<host>/<db>?sslmode=require"
+BACKEND_PORT=5000
+JWT_SECRET="change-me-in-production"
 ```
 
-Get both from your Neon project dashboard → Connection Details (pooled + direct).
+**`frontend/.env.local`**
+```env
+NEXT_PUBLIC_API_URL=http://localhost:5000
+```
 
-## 5. Sample Seed Data
+> In production, point `NEXT_PUBLIC_API_URL` at your deployed backend URL — **not** `localhost`.
 
-`prisma/seed.ts` creates:
-- **1 HR user** — Meera Kulkarni
-- **3 employees** — Parth Shah, Riya Desai, Arjun Mehta
-- Payroll rows for all 4 users
-- 4 sample leave requests across Pending / Approved / Rejected statuses
+---
 
-Re-run anytime with `npm run db:seed` (it clears and reseeds Leave/Payroll/User tables).
+## 👤 Roles & Access
 
-## 6. Feature Notes
+| Capability | ADMIN | HR | EMPLOYEE |
+| --- | :---: | :---: | :---: |
+| My Dashboard / Profile / Attendance / Apply Leave | ✅ | ✅ | ✅ |
+| Admin Panel · Employee list · Onboard | ✅ | ✅ | — |
+| Attendance records (all employees) | ✅ | ✅ | — |
+| Leave approvals | ✅ | ✅ | — |
+| Salary Info (view & edit) | ✅ | ✅ | — |
 
-- **Apply Leave**: type select (Paid/Sick/Unpaid), two-month range calendar picker,
-  remarks textarea (min 10 chars), a **review summary dialog** before final submit,
-  toast confirmation, and automatic leave-history + balance refresh.
-- **Leave Balance**: computed server-side from allocated (Paid: 12, Sick: 8) minus
-  approved and pending days — tune `LEAVE_ALLOCATION` in `src/lib/validations/leave.ts`.
-- **HR Leave Approval**: search by employee name, filter by status/type,
-  approve/reject with an optional comment dialog, and the table updates instantly
-  (no full page reload) via local state patching after each PATCH call.
-- **Employee Payroll**: read-only breakdown card (Basic, Allowances, Deductions,
-  Net Salary computed live, never stored to avoid staleness).
-- **HR Payroll**: table of all employees with an edit dialog that live-previews the
-  projected net salary as HR types.
-- **UX**: loading skeletons on every data fetch, empty states for no leaves/no
-  payroll, Zod + React Hook Form validation with inline error messages, and a
-  light corporate theme (white/slate background, blue primary accent, rounded-lg,
-  soft shadows) defined via CSS variables in `globals.css`.
+Access is enforced by one shared guard on both ends — `requireRole(...roles)` on the
+backend and `useHasRole(...)` / `<RoleGate>` on the frontend.
 
-## 7. Extending
+---
 
-- Swap the day-count calculation in `src/app/api/leaves/route.ts` if you want to
-  exclude weekends/holidays (currently counts calendar days inclusive).
-- Add role-based route protection once real auth is in place (middleware.ts
-  checking session role before allowing `/hr/*` routes).
+## 📡 API Reference
+
+All routes require a `Bearer <token>` header (issued by `POST /api/auth/login`).
+
+| Method | Endpoint | Access | Purpose |
+| --- | --- | --- | --- |
+| `POST` | `/api/auth/login` | public | Log in, receive JWT |
+| `POST` | `/api/auth/create-employee` | ADMIN/HR | Onboard an employee |
+| `GET`  | `/api/auth/preview-id` | ADMIN/HR | Preview auto-generated Employee ID |
+| `GET`  | `/api/auth/me` | auth | Current user |
+| `GET`  | `/api/attendance/:userId` | auth | Today / weekly / monthly bundle |
+| `POST` | `/api/attendance/checkin` · `/checkout` | auth | Check in / out |
+| `GET`  | `/api/admin/attendance` | ADMIN/HR | All-employee attendance (date filter) |
+| `GET`  | `/api/users` | ADMIN/HR | Employee list + today's status |
+| `GET`  | `/api/users/:id` | owner / ADMIN/HR | Full profile |
+| `PUT`  | `/api/users/:id/private-info` | owner / ADMIN/HR | Update private info |
+| `GET`  | `/api/salary-structure/:userId` | ADMIN/HR | Latest salary structure |
+| `PUT`  | `/api/salary-structure/:userId` | ADMIN/HR | Create / update salary structure |
+| `GET`  | `/api/leaves/me` | auth | Own leaves |
+| `GET`  | `/api/leaves?status=PENDING` | ADMIN/HR | All leaves |
+| `POST` | `/api/leaves` | auth | Apply for leave |
+| `PATCH`| `/api/leaves/:id/status` | ADMIN/HR | Approve / reject (+ comment) |
+
+---
+
+## 🌱 Seed Data
+
+`backend/prisma/seed.js` enriches the primary employees (`EMP-0001`…`EMP-0005`) with
+realistic profile details and a full **salary structure** (Basic, HRA, allowances, PF,
+professional tax). It's idempotent and leaves existing users, attendance, and leave
+records intact. Re-run anytime:
+
+```bash
+cd backend && node prisma/seed.js
+```
+
+---
+
+## 📦 Deployment Notes
+
+- Deploy the **frontend** and **backend separately** — the backend is a long-running
+  Express server (host it on Render / Railway / Fly), the frontend on Vercel.
+- On Vercel, set the project **Root Directory to `frontend`** and add the
+  `NEXT_PUBLIC_API_URL` environment variable pointing to your live backend.
+- Run `prisma generate` + `prisma db push` against your production database before first boot.
+
+---
+
+<div align="center">
+
+Built for the **Odoo × ADAMAS** hackathon 🚀
+
+</div>
